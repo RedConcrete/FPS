@@ -26,6 +26,17 @@ public static class Model
 
         [Header("Movemnet Settings")]
 
+        public bool SprintHold;
+        public float MovementSmoothing;
+
+        [Header("Movemnet Settings - Run")]
+
+        public float runningForwardSpeed;
+        public float runningStrafeSpeed;
+
+
+        [Header("Movemnet Settings - Walk")]
+
         public float walkingSpeed;
         public float walkingBackwardSpeed;
         public float walkingStrafeSpeed;
@@ -34,6 +45,14 @@ public static class Model
 
         public float JumpingHight;
         public float JumpingFallDown;
+        public float FallingSmoothing;
+
+        [Header("Speed Effect")]
+
+        public float speedEffect = 1;
+        public float crouchSpeedEffect;
+        public float proneSpeedEffect;
+        public float fallingSpeedEffect;
 
 
     }

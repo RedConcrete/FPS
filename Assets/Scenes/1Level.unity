@@ -129,7 +129,7 @@ Mesh:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: pb_Mesh31510
+  m_Name: pb_Mesh32176
   serializedVersion: 10
   m_SubMeshes:
   - serializedVersion: 2
@@ -711,7 +711,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 385934493}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: CameraHolder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -839,7 +839,7 @@ GameObject:
   - component: {fileID: 963194228}
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Camera
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
@@ -1009,6 +1009,37 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1243529968
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1243529969}
+  m_Layer: 6
+  m_Name: FeetTrans
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1243529969
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1243529968}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1302760024}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1302760018
 GameObject:
   m_ObjectHideFlags: 0
@@ -1024,7 +1055,7 @@ GameObject:
   - component: {fileID: 91795797}
   - component: {fileID: 1302760020}
   - component: {fileID: 1302760019}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1043,22 +1074,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eaf64af0e1cfcfe4db30626a8116ec93, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  input_Movement: {x: 0, y: 0}
-  input_View: {x: 0, y: 0}
   cameraHolder: {fileID: 385934493}
+  feetTransfrom: {fileID: 1243529969}
   playerSettings:
     ViewXSen: 10
     ViewYSen: 10
     ViewXInverted: 0
     ViewYInverted: 0
-    walkingSpeed: 10
-    walkingBackwardSpeed: 10
-    walkingStrafeSpeed: 10
-    JumpingHight: 8
-    JumpingFallDown: 1
+    SprintHold: 0
+    MovementSmoothing: 0.2
+    runningForwardSpeed: 12
+    runningStrafeSpeed: 10
+    walkingSpeed: 7.5
+    walkingBackwardSpeed: 4
+    walkingStrafeSpeed: 5
+    JumpingHight: 5
+    JumpingFallDown: 0.4
+    FallingSmoothing: 0.4
+    speedEffect: 1
+    crouchSpeedEffect: 0.6
+    proneSpeedEffect: 0.2
+    fallingSpeedEffect: 0.4
   viewClampYMin: -60
   viewClampYMax: 80
-  g: 0.05
+  playerMask:
+    serializedVersion: 2
+    m_Bits: 55
+  g: 0.03
   gMin: -3
   jumpForce: {x: 0, y: 0, z: 0}
   playerStance: 0
@@ -1125,6 +1167,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 385934493}
+  - {fileID: 1243529969}
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

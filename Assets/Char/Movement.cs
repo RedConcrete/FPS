@@ -8,9 +8,8 @@ public class Movement : MonoBehaviour
     private CharacterController characterController;
 
     private Inputs inputs;
-    public Vector2 input_Movement;
-    public Vector2 input_View;
-
+    private Vector2 input_Movement;
+    private Vector2 input_View;
 
     private Vector3 camera_Rotation;
     private Vector3 char_Rotation;
@@ -18,11 +17,14 @@ public class Movement : MonoBehaviour
 
     [Header("ref")]
     public Transform cameraHolder;
+    public Transform feetTransfrom;
+    
 
     [Header("Settings")]
     public PlayerSettingsModel playerSettings;
     public float viewClampYMin = -70;
     public float viewClampYMax = 80;
+    public LayerMask playerMask;
 
     [Header("Garvity")]
     public float g;
@@ -39,15 +41,18 @@ public class Movement : MonoBehaviour
     public CharStance playerStandStance;
     public CharStance playerCrouchStance;
     public CharStance playerProneStance;
-    
+    private float stanceCheckErrorMargin = 0.05f;
     private float cameraHeight;
     private float cameraHeightV;
 
-    private Vector3 stanceCapsulCenter;
     private Vector3 stanceCapsulCenterVelocity;
-
-    private float stanceCapsuleHeight;
     private float stanceCapsuleHeightVelocity;
+
+    private bool isSprint;
+
+    private Vector3 movementSpeed;
+    private Vector3 movementSpeedVelocity;
+
 
     public void Awake()
     {
@@ -59,6 +64,11 @@ public class Movement : MonoBehaviour
         inputs.Char.Movement.performed += e => input_Movement = e.ReadValue<Vector2>();
         inputs.Char.View.performed += e => input_View = e.ReadValue<Vector2>();
         inputs.Char.Jump.performed += e => Jump();
+        
+        inputs.Char.Crouch.performed += e => Crouch();
+        inputs.Char.Prone.performed += e => Prone();
+
+        inputs.Char.Sprint.performed += e => ToggelSprint();
 
         inputs.Enable();
 
@@ -93,12 +103,46 @@ public class Movement : MonoBehaviour
     private void CalcMovement()
     {
 
-        var verticalSpeed = playerSettings.walkingSpeed * input_Movement.y * Time.deltaTime;
-        var horizontalSpeed = playerSettings.walkingStrafeSpeed * input_Movement.x * Time.deltaTime;
+        if (input_Movement.y <= 0.2f)
+        {
+            isSprint = false;
+        }
 
-        var movemnetSpeed = new Vector3(horizontalSpeed, 0, verticalSpeed);
+        var verticalSpeed = playerSettings.walkingSpeed;
+        var horizontalSpeed = playerSettings.walkingStrafeSpeed;
 
-        movemnetSpeed = transform.TransformDirection(movemnetSpeed);
+        if (isSprint)
+        {
+            verticalSpeed = playerSettings.runningForwardSpeed;
+            horizontalSpeed = playerSettings.runningStrafeSpeed;
+        }
+
+        if (!characterController.isGrounded)
+        {
+            playerSettings.speedEffect = playerSettings.fallingSpeedEffect;
+        }
+        else if(playerStance == PlayerStance.Crouch)
+        {
+            playerSettings.speedEffect = playerSettings.crouchSpeedEffect;
+        }
+        else if (playerStance == PlayerStance.Prone)
+        {
+            playerSettings.speedEffect = playerSettings.proneSpeedEffect;
+        }
+        else
+        {
+            playerSettings.speedEffect = 1;
+        }
+
+        verticalSpeed *= playerSettings.speedEffect;
+        horizontalSpeed *= playerSettings.speedEffect;
+
+
+        movementSpeed = Vector3.SmoothDamp(movementSpeed,
+            new Vector3(horizontalSpeed * input_Movement.x * Time.deltaTime, 0, verticalSpeed * input_Movement.y * Time.deltaTime),
+            ref movementSpeedVelocity,
+            characterController.isGrounded ? playerSettings.MovementSmoothing : playerSettings.FallingSmoothing);
+        var movementSpeedNotSmoothed = transform.TransformDirection(movementSpeed);
 
         if (playerG > gMin)
         {
@@ -110,13 +154,10 @@ public class Movement : MonoBehaviour
             playerG = -0.1f;
         }
 
-     
+        movementSpeedNotSmoothed.y += playerG;
+        movementSpeedNotSmoothed += jumpForce * Time.deltaTime;
 
-        movemnetSpeed.y += playerG;
-
-        movemnetSpeed += jumpForce * Time.deltaTime;
-
-        characterController.Move(movemnetSpeed);
+        characterController.Move(movementSpeedNotSmoothed);
     }
 
     private void CalcJump()
@@ -131,6 +172,15 @@ public class Movement : MonoBehaviour
         {
             jumpForce = Vector3.up * playerSettings.JumpingHight;
             playerG = 0;
+        }
+        else if (playerStance == PlayerStance.Prone)
+        {
+            return;
+        }
+
+        if (playerStance == PlayerStance.Crouch)
+        {
+            return;
         }
     }
 
@@ -154,6 +204,71 @@ public class Movement : MonoBehaviour
         characterController.center = Vector3.SmoothDamp(characterController.center, curenntStance.capsuleCollider.center, ref stanceCapsulCenterVelocity, playerStanceSmooth);
 
 
+    }
+
+    private void Crouch()
+    {
+
+        if (playerStance == PlayerStance.Crouch)
+        {
+
+            if (StanceCheck(playerStandStance.capsuleCollider.height))
+            {
+                return;
+            }
+
+            playerStance = PlayerStance.Stand;
+            return;
+        }
+
+        if (StanceCheck(playerCrouchStance.capsuleCollider.height))
+        {
+            return;
+        }
+
+        playerStance = PlayerStance.Crouch;
+    }
+
+    private void Prone()
+    {
+
+        if (playerStance == PlayerStance.Prone)
+        {
+            if (StanceCheck(playerStandStance.capsuleCollider.height))
+            {
+                return;
+            }
+            playerStance = PlayerStance.Stand;
+            return;
+        }
+
+        if (StanceCheck(playerProneStance.capsuleCollider.height))
+        {
+            return;
+        }
+        playerStance = PlayerStance.Prone;
+    }
+
+    private bool StanceCheck(float stanceCheckHight)
+    {
+
+        var start = new Vector3(feetTransfrom.position.x,feetTransfrom.position.y + characterController.radius  + stanceCheckErrorMargin, feetTransfrom.position.z);
+        var end = new Vector3(feetTransfrom.position.x, feetTransfrom.position.y - characterController.radius - stanceCheckErrorMargin + stanceCheckHight, feetTransfrom.position.z);
+
+        return Physics.CheckCapsule(start,end, characterController.radius, playerMask);
 
     }
+
+    private void ToggelSprint()
+    {
+
+        if (input_Movement.y <= 0.2f)
+        {
+            isSprint = false;
+            return;
+        }
+
+        isSprint = !isSprint;
+    }
+
 }
