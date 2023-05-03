@@ -80,6 +80,15 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Hook"",
+                    ""type"": ""Button"",
+                    ""id"": ""f4e03b7d-22a3-4df2-bf22-df23b7db747d"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -203,6 +212,17 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
                     ""action"": ""Sprint"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b680630b-3e69-49cd-a071-16c2392341cd"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Hook"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -217,6 +237,7 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
         m_Char_Crouch = m_Char.FindAction("Crouch", throwIfNotFound: true);
         m_Char_Prone = m_Char.FindAction("Prone", throwIfNotFound: true);
         m_Char_Sprint = m_Char.FindAction("Sprint", throwIfNotFound: true);
+        m_Char_Hook = m_Char.FindAction("Hook", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -282,6 +303,7 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
     private readonly InputAction m_Char_Crouch;
     private readonly InputAction m_Char_Prone;
     private readonly InputAction m_Char_Sprint;
+    private readonly InputAction m_Char_Hook;
     public struct CharActions
     {
         private @Inputs m_Wrapper;
@@ -292,6 +314,7 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
         public InputAction @Crouch => m_Wrapper.m_Char_Crouch;
         public InputAction @Prone => m_Wrapper.m_Char_Prone;
         public InputAction @Sprint => m_Wrapper.m_Char_Sprint;
+        public InputAction @Hook => m_Wrapper.m_Char_Hook;
         public InputActionMap Get() { return m_Wrapper.m_Char; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -319,6 +342,9 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
                 @Sprint.started -= m_Wrapper.m_CharActionsCallbackInterface.OnSprint;
                 @Sprint.performed -= m_Wrapper.m_CharActionsCallbackInterface.OnSprint;
                 @Sprint.canceled -= m_Wrapper.m_CharActionsCallbackInterface.OnSprint;
+                @Hook.started -= m_Wrapper.m_CharActionsCallbackInterface.OnHook;
+                @Hook.performed -= m_Wrapper.m_CharActionsCallbackInterface.OnHook;
+                @Hook.canceled -= m_Wrapper.m_CharActionsCallbackInterface.OnHook;
             }
             m_Wrapper.m_CharActionsCallbackInterface = instance;
             if (instance != null)
@@ -341,6 +367,9 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
                 @Sprint.started += instance.OnSprint;
                 @Sprint.performed += instance.OnSprint;
                 @Sprint.canceled += instance.OnSprint;
+                @Hook.started += instance.OnHook;
+                @Hook.performed += instance.OnHook;
+                @Hook.canceled += instance.OnHook;
             }
         }
     }
@@ -353,5 +382,6 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
         void OnCrouch(InputAction.CallbackContext context);
         void OnProne(InputAction.CallbackContext context);
         void OnSprint(InputAction.CallbackContext context);
+        void OnHook(InputAction.CallbackContext context);
     }
 }

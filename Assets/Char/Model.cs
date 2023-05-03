@@ -47,6 +47,15 @@ public static class Model
         public float JumpingFallDown;
         public float FallingSmoothing;
 
+        [Header("HookShot")]
+
+        public float hookShotSpeedMultiplier;
+        public float hookShotSpeedMin;
+        public float hookShotSpeedMax;
+        public float reachedHookshotPositionDistance;
+        public float hookShotThorwSpeed;
+        
+
         [Header("Speed Effect")]
 
         public float speedEffect = 1;

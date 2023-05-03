@@ -5,6 +5,9 @@ using static Model;
 
 public class Movement : MonoBehaviour
 {
+    [SerializeField] private Transform debugHitPointTransform;
+    [SerializeField] private Transform hookShotTransform;
+
     private CharacterController characterController;
 
     private Inputs inputs;
@@ -14,11 +17,11 @@ public class Movement : MonoBehaviour
     private Vector3 camera_Rotation;
     private Vector3 char_Rotation;
 
-
-    [Header("ref")]
+    [Header("References")]
     public Transform cameraHolder;
     public Transform feetTransfrom;
-    
+    public Transform playerCam;
+
 
     [Header("Settings")]
     public PlayerSettingsModel playerSettings;
@@ -37,7 +40,7 @@ public class Movement : MonoBehaviour
     [Header("Stancs")]
     public PlayerStance playerStance;
     public float playerStanceSmooth;
-    
+
     public CharStance playerStandStance;
     public CharStance playerCrouchStance;
     public CharStance playerProneStance;
@@ -53,6 +56,21 @@ public class Movement : MonoBehaviour
     private Vector3 movementSpeed;
     private Vector3 movementSpeedVelocity;
 
+    private State state;
+    private Vector3 hookShotPos;
+    private float hookShotSize;
+
+    private CamraFOV camraFOV;
+    private const float NORMAL_FOV = 60f;
+    private const float HOOKSHOT_FOV = 100f;
+
+    private enum State
+    {
+        Normal,
+        HookShot,
+        HookShotThrown,
+    }
+
 
     public void Awake()
     {
@@ -64,7 +82,7 @@ public class Movement : MonoBehaviour
         inputs.Char.Movement.performed += e => input_Movement = e.ReadValue<Vector2>();
         inputs.Char.View.performed += e => input_View = e.ReadValue<Vector2>();
         inputs.Char.Jump.performed += e => Jump();
-        
+
         inputs.Char.Crouch.performed += e => Crouch();
         inputs.Char.Prone.performed += e => Prone();
 
@@ -78,14 +96,38 @@ public class Movement : MonoBehaviour
         characterController = GetComponent<CharacterController>();
 
         cameraHeight = cameraHolder.localPosition.y;
+
+        state = State.Normal;
+        hookShotTransform.gameObject.SetActive(false);
+
+        camraFOV = playerCam.GetComponent<CamraFOV>();
     }
 
     private void Update()
     {
-        CalcView();
-        CalcMovement();
-        CalcJump();
-        CalcStance();
+        switch (state)
+        {
+            default:
+            case State.Normal:
+                CalcView();
+                CalcMovement();
+                CalcJump();
+                CalcStance();
+                StartGrapple();
+                break;
+            case State.HookShot:
+                CalcView();
+                HandelHookshotMovement();
+                break;
+            case State.HookShotThrown:
+                CalcView();
+                CalcMovement();
+                CalcJump();
+                CalcStance();
+                HandelHookshotThorwn();
+                break;
+        }
+
     }
 
     private void CalcView()
@@ -93,7 +135,7 @@ public class Movement : MonoBehaviour
         char_Rotation.y += playerSettings.ViewXSen * (playerSettings.ViewYInverted ? -input_View.x : input_View.x) * Time.deltaTime;
         transform.localRotation = Quaternion.Euler(char_Rotation);
 
-        camera_Rotation.x += playerSettings.ViewYSen * (playerSettings.ViewYInverted ? input_View.y : -input_View.y)  * Time.deltaTime;
+        camera_Rotation.x += playerSettings.ViewYSen * (playerSettings.ViewYInverted ? input_View.y : -input_View.y) * Time.deltaTime;
         camera_Rotation.x = Mathf.Clamp(camera_Rotation.x, viewClampYMin, viewClampYMax);
 
         cameraHolder.localRotation = Quaternion.Euler(camera_Rotation);
@@ -121,7 +163,7 @@ public class Movement : MonoBehaviour
         {
             playerSettings.speedEffect = playerSettings.fallingSpeedEffect;
         }
-        else if(playerStance == PlayerStance.Crouch)
+        else if (playerStance == PlayerStance.Crouch)
         {
             playerSettings.speedEffect = playerSettings.crouchSpeedEffect;
         }
@@ -148,7 +190,7 @@ public class Movement : MonoBehaviour
         {
             playerG -= g * Time.deltaTime;
         }
-       
+
         if (playerG < -0.1f && characterController.isGrounded)
         {
             playerG = -0.1f;
@@ -198,9 +240,9 @@ public class Movement : MonoBehaviour
         }
 
         cameraHeight = Mathf.SmoothDamp(cameraHolder.localPosition.y, curenntStance.CameraHeight, ref cameraHeightV, playerStanceSmooth);
-        cameraHolder.localPosition = new Vector3(cameraHolder.localPosition.x ,cameraHeight, cameraHolder.localPosition.z);
+        cameraHolder.localPosition = new Vector3(cameraHolder.localPosition.x, cameraHeight, cameraHolder.localPosition.z);
 
-        characterController.height = Mathf.SmoothDamp(characterController.height, curenntStance.capsuleCollider.height , ref stanceCapsuleHeightVelocity, playerStanceSmooth);
+        characterController.height = Mathf.SmoothDamp(characterController.height, curenntStance.capsuleCollider.height, ref stanceCapsuleHeightVelocity, playerStanceSmooth);
         characterController.center = Vector3.SmoothDamp(characterController.center, curenntStance.capsuleCollider.center, ref stanceCapsulCenterVelocity, playerStanceSmooth);
 
 
@@ -252,10 +294,10 @@ public class Movement : MonoBehaviour
     private bool StanceCheck(float stanceCheckHight)
     {
 
-        var start = new Vector3(feetTransfrom.position.x,feetTransfrom.position.y + characterController.radius  + stanceCheckErrorMargin, feetTransfrom.position.z);
+        var start = new Vector3(feetTransfrom.position.x, feetTransfrom.position.y + characterController.radius + stanceCheckErrorMargin, feetTransfrom.position.z);
         var end = new Vector3(feetTransfrom.position.x, feetTransfrom.position.y - characterController.radius - stanceCheckErrorMargin + stanceCheckHight, feetTransfrom.position.z);
 
-        return Physics.CheckCapsule(start,end, characterController.radius, playerMask);
+        return Physics.CheckCapsule(start, end, characterController.radius, playerMask);
 
     }
 
@@ -271,4 +313,71 @@ public class Movement : MonoBehaviour
         isSprint = !isSprint;
     }
 
+    private void StartGrapple()
+    {
+        if (TestInputDownHookShot())
+        {
+            if (Physics.Raycast(playerCam.position, playerCam.forward, out RaycastHit raycastHit))
+            {
+                debugHitPointTransform.position = raycastHit.point;
+                hookShotPos = raycastHit.point;
+                hookShotSize = 0f;
+                hookShotTransform.gameObject.SetActive(true);
+                hookShotTransform.localScale = Vector3.zero;
+                state = State.HookShotThrown;
+            }
+        }
+    }
+
+    private void HandelHookshotThorwn(){
+        hookShotTransform.LookAt(hookShotPos);
+
+        hookShotSize += playerSettings.hookShotThorwSpeed * Time.deltaTime;
+        hookShotTransform.localScale = new Vector3(1, 1, hookShotSize);
+
+        if (hookShotSize >= Vector3.Distance(transform.position, hookShotPos))
+        {
+            state = State.HookShot;
+            camraFOV.SetCameraFov(HOOKSHOT_FOV);
+        }
+
+    }
+
+    private void HandelHookshotMovement()
+    {
+        hookShotTransform.LookAt(hookShotPos);
+        Vector3 hookShotDir = (hookShotPos - transform.position).normalized;
+
+        float hookShotSpeed = Mathf.Clamp(Vector3.Distance(transform.position, hookShotPos), playerSettings.hookShotSpeedMin, playerSettings.hookShotSpeedMax);
+
+        characterController.Move(hookShotDir * hookShotSpeed * playerSettings.hookShotSpeedMultiplier * Time.deltaTime);
+
+        if (Vector3.Distance(transform.position, hookShotPos) < playerSettings.reachedHookshotPositionDistance)
+        {
+            StopHookShot();
+        }
+
+        if (TestInputDownHookShot())
+        {
+            StopHookShot();
+        }
+
+    }
+
+    private void StopHookShot()
+    {
+        state = State.Normal;
+        ResetG();
+        hookShotTransform.gameObject.SetActive(false);
+        camraFOV.SetCameraFov(NORMAL_FOV);
+    }
+
+    private bool TestInputDownHookShot()
+    {
+        return Input.GetKeyDown(KeyCode.E);
+    }
+    private void ResetG()
+    {
+        playerG = 0;
+    }
 }
