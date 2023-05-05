@@ -47,6 +47,17 @@ public static class Model
         public float JumpingFallDown;
         public float FallingSmoothing;
 
+        [Header("Dash")]
+
+        public float dashForce;
+        public float dashDuration;
+
+        public float dashCooldown;
+        public float dashTimer;
+        public float dashCooldownTimer;
+
+        public float dashSpeedMultiplier;
+
         [Header("HookShot")]
 
         public float hookShotSpeedMultiplier;
@@ -54,7 +65,13 @@ public static class Model
         public float hookShotSpeedMax;
         public float reachedHookshotPositionDistance;
         public float hookShotThorwSpeed;
-        
+        public float hookShotMaxDist;
+
+
+        public float hookCooldownTimer;
+        public float hookTimer;
+        public float hookDuration;
+        public float hookCooldown;
 
         [Header("Speed Effect")]
 

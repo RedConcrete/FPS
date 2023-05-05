@@ -1,6 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
 using static Model;
 
 public class Movement : MonoBehaviour
@@ -21,7 +24,9 @@ public class Movement : MonoBehaviour
     public Transform cameraHolder;
     public Transform feetTransfrom;
     public Transform playerCam;
-
+    public TextMeshProUGUI dashTimeTextField;
+    public TextMeshProUGUI hookTimeTextField;
+    public GameObject hookIndicator;
 
     [Header("Settings")]
     public PlayerSettingsModel playerSettings;
@@ -36,6 +41,7 @@ public class Movement : MonoBehaviour
 
     public Vector3 jumpForce;
     private Vector3 jumpForceV;
+    private int jumpCount;
 
     [Header("Stancs")]
     public PlayerStance playerStance;
@@ -64,11 +70,17 @@ public class Movement : MonoBehaviour
     private const float NORMAL_FOV = 60f;
     private const float HOOKSHOT_FOV = 100f;
 
+    private bool isDashing = false;
+    private bool isHooking = false;
+
+
+
     private enum State
     {
         Normal,
         HookShot,
         HookShotThrown,
+        Dash,
     }
 
 
@@ -87,6 +99,7 @@ public class Movement : MonoBehaviour
         inputs.Char.Prone.performed += e => Prone();
 
         inputs.Char.Sprint.performed += e => ToggelSprint();
+        inputs.Char.Dash.started += e => Dash();
 
         inputs.Enable();
 
@@ -101,10 +114,13 @@ public class Movement : MonoBehaviour
         hookShotTransform.gameObject.SetActive(false);
 
         camraFOV = playerCam.GetComponent<CamraFOV>();
+
+        jumpCount = 0;
     }
 
     private void Update()
     {
+
         switch (state)
         {
             default:
@@ -126,8 +142,21 @@ public class Movement : MonoBehaviour
                 CalcStance();
                 HandelHookshotThorwn();
                 break;
+            case State.Dash:
+                break;
         }
 
+        if (playerSettings.dashCooldownTimer > 0f)
+        {
+            dashTimeTextField.text = Mathf.Floor(playerSettings.dashCooldownTimer * 10f) / 10f + "s";
+            playerSettings.dashCooldownTimer -= Time.deltaTime;
+        }
+
+        if (playerSettings.hookCooldownTimer > 0f)
+        {
+            hookTimeTextField.text = Mathf.Floor(playerSettings.hookCooldownTimer * 10f) / 10f + "s";
+            playerSettings.hookCooldownTimer -= Time.deltaTime;
+        }
     }
 
     private void CalcView()
@@ -208,12 +237,46 @@ public class Movement : MonoBehaviour
 
     }
 
+    private void Dash()
+    {
+
+        if (playerSettings.dashCooldownTimer <= 0f && !isDashing)
+        {
+            isDashing = true;
+            playerSettings.dashTimer = playerSettings.dashDuration;
+            state = State.Dash;
+        }
+
+        while (isDashing)
+        {
+            Vector3 moveDirection = transform.forward;
+            characterController.Move(moveDirection * playerSettings.dashForce * playerSettings.dashSpeedMultiplier * Time.deltaTime);
+            characterController.Move(moveDirection * Time.deltaTime);
+            playerSettings.dashTimer -= Time.deltaTime;
+            if (playerSettings.dashTimer <= 0f)
+            {
+                isDashing = false;
+                playerSettings.dashCooldownTimer = playerSettings.dashCooldown;
+                state = State.Normal;
+            }
+        }
+
+    }
+
     private void Jump()
     {
+
         if (characterController.isGrounded)
         {
             jumpForce = Vector3.up * playerSettings.JumpingHight;
             playerG = 0;
+            jumpCount = 0;
+        }
+        else if (jumpCount <= 0)
+        {
+            jumpForce = Vector3.up * playerSettings.JumpingHight;
+            playerG = 0;
+            jumpCount += 1;
         }
         else if (playerStance == PlayerStance.Prone)
         {
@@ -315,31 +378,53 @@ public class Movement : MonoBehaviour
 
     private void StartGrapple()
     {
-        if (TestInputDownHookShot())
+
+        if (playerSettings.hookCooldownTimer <= 0f && !isHooking)
         {
-            if (Physics.Raycast(playerCam.position, playerCam.forward, out RaycastHit raycastHit))
+            isHooking = true;
+            playerSettings.hookTimer = playerSettings.hookDuration;
+        }
+
+        if (isHooking)
+        {
+            if (TestInputDownHookShot())
             {
-                debugHitPointTransform.position = raycastHit.point;
-                hookShotPos = raycastHit.point;
-                hookShotSize = 0f;
-                hookShotTransform.gameObject.SetActive(true);
-                hookShotTransform.localScale = Vector3.zero;
-                state = State.HookShotThrown;
+                if (Physics.Raycast(playerCam.position, playerCam.forward, out RaycastHit raycastHit))
+                {
+                    debugHitPointTransform.position = raycastHit.point;
+                    hookShotPos = raycastHit.point;
+                    hookShotSize = 0f;
+                    hookShotTransform.gameObject.SetActive(true);
+                    hookShotTransform.localScale = Vector3.zero;
+                    state = State.HookShotThrown;
+                }
             }
         }
     }
 
-    private void HandelHookshotThorwn(){
+    private void HandelHookshotThorwn()
+    {
         hookShotTransform.LookAt(hookShotPos);
 
         hookShotSize += playerSettings.hookShotThorwSpeed * Time.deltaTime;
         hookShotTransform.localScale = new Vector3(1, 1, hookShotSize);
 
-        if (hookShotSize >= Vector3.Distance(transform.position, hookShotPos))
+        if (playerSettings.hookShotMaxDist >= Vector3.Distance(transform.position, hookShotPos))
         {
-            state = State.HookShot;
-            camraFOV.SetCameraFov(HOOKSHOT_FOV);
+            hookIndicator.gameObject.SetActive(false);
+            if (hookShotSize >= Vector3.Distance(transform.position, hookShotPos))
+            {
+                state = State.HookShot;
+                camraFOV.SetCameraFov(HOOKSHOT_FOV);
+            }
         }
+        else
+        {
+            hookIndicator.gameObject.SetActive(true);
+            state = State.Normal;
+            hookShotTransform.gameObject.SetActive(false);
+        }
+
 
     }
 
@@ -366,12 +451,13 @@ public class Movement : MonoBehaviour
 
     private void StopHookShot()
     {
+        isHooking = false;
+        playerSettings.hookCooldownTimer = playerSettings.hookCooldown;
         state = State.Normal;
         ResetG();
         hookShotTransform.gameObject.SetActive(false);
         camraFOV.SetCameraFov(NORMAL_FOV);
     }
-
     private bool TestInputDownHookShot()
     {
         return Input.GetKeyDown(KeyCode.E);

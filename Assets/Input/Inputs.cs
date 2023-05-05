@@ -89,6 +89,15 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Dash"",
+                    ""type"": ""Button"",
+                    ""id"": ""2301ede2-03ad-459a-9585-bb10336ccfa5"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -223,6 +232,17 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
                     ""action"": ""Hook"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""59d3f060-6f49-41d8-9ef9-3e4c3e92d7be"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Dash"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -238,6 +258,7 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
         m_Char_Prone = m_Char.FindAction("Prone", throwIfNotFound: true);
         m_Char_Sprint = m_Char.FindAction("Sprint", throwIfNotFound: true);
         m_Char_Hook = m_Char.FindAction("Hook", throwIfNotFound: true);
+        m_Char_Dash = m_Char.FindAction("Dash", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -304,6 +325,7 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
     private readonly InputAction m_Char_Prone;
     private readonly InputAction m_Char_Sprint;
     private readonly InputAction m_Char_Hook;
+    private readonly InputAction m_Char_Dash;
     public struct CharActions
     {
         private @Inputs m_Wrapper;
@@ -315,6 +337,7 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
         public InputAction @Prone => m_Wrapper.m_Char_Prone;
         public InputAction @Sprint => m_Wrapper.m_Char_Sprint;
         public InputAction @Hook => m_Wrapper.m_Char_Hook;
+        public InputAction @Dash => m_Wrapper.m_Char_Dash;
         public InputActionMap Get() { return m_Wrapper.m_Char; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -345,6 +368,9 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
                 @Hook.started -= m_Wrapper.m_CharActionsCallbackInterface.OnHook;
                 @Hook.performed -= m_Wrapper.m_CharActionsCallbackInterface.OnHook;
                 @Hook.canceled -= m_Wrapper.m_CharActionsCallbackInterface.OnHook;
+                @Dash.started -= m_Wrapper.m_CharActionsCallbackInterface.OnDash;
+                @Dash.performed -= m_Wrapper.m_CharActionsCallbackInterface.OnDash;
+                @Dash.canceled -= m_Wrapper.m_CharActionsCallbackInterface.OnDash;
             }
             m_Wrapper.m_CharActionsCallbackInterface = instance;
             if (instance != null)
@@ -370,6 +396,9 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
                 @Hook.started += instance.OnHook;
                 @Hook.performed += instance.OnHook;
                 @Hook.canceled += instance.OnHook;
+                @Dash.started += instance.OnDash;
+                @Dash.performed += instance.OnDash;
+                @Dash.canceled += instance.OnDash;
             }
         }
     }
@@ -383,5 +412,6 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
         void OnProne(InputAction.CallbackContext context);
         void OnSprint(InputAction.CallbackContext context);
         void OnHook(InputAction.CallbackContext context);
+        void OnDash(InputAction.CallbackContext context);
     }
 }
