@@ -29,6 +29,9 @@ public class Movement : MonoBehaviour
     public TextMeshProUGUI dashTimeTextField;
     public TextMeshProUGUI hookTimeTextField;
     public GameObject hookIndicator;
+    public GameObject rig;
+    private Animator animator;
+
 
     [Header("Settings")]
     public PlayerSettingsModel playerSettings;
@@ -113,6 +116,7 @@ public class Movement : MonoBehaviour
         char_Rotation = transform.localRotation.eulerAngles;
 
         characterController = GetComponent<CharacterController>();
+        animator = rig.gameObject.GetComponent<Animator>();
 
         cameraHeight = cameraHolder.localPosition.y;
 
@@ -154,8 +158,44 @@ public class Movement : MonoBehaviour
                 break;
         }
 
-        playerSettings.dashCooldownTimer = CalcCloodownTimer(playerSettings.dashCooldownTimer);
-        playerSettings.hookCooldownTimer = CalcCloodownTimer(playerSettings.hookCooldownTimer);
+        if (playerSettings.hookCooldownTimer > 0f)
+        {
+            hookTimeTextField.text = Mathf.Floor(playerSettings.hookCooldownTimer * 10f) / 10f + "s";
+            playerSettings.hookCooldownTimer -= Time.deltaTime;
+        }
+
+        if (playerSettings.dashCooldownTimer > 0f)
+        {
+            dashTimeTextField.text = Mathf.Floor(playerSettings.dashCooldownTimer * 10f) / 10f + "s";
+            playerSettings.dashCooldownTimer -= Time.deltaTime;
+        }
+
+        if (input_Movement.y > 0.2f && characterController.isGrounded)
+        {
+            if (isSprint)
+            {
+                animator.SetBool("isRunning", true);
+            }
+            else
+            {
+                animator.SetBool("isWalking", true);
+            }
+        }
+        else
+        {
+            animator.SetBool("isWalking", false);
+            animator.SetBool("isRunning", false);
+        }
+
+        if (!characterController.isGrounded)
+        {
+            animator.SetBool("isJumping", true);
+        }
+        else
+        {
+            animator.SetBool("isJumping", false);
+        }
+
     }
 
     private void CalcView()
@@ -233,7 +273,6 @@ public class Movement : MonoBehaviour
     private void CalcJump()
     {
         jumpForce = Vector3.SmoothDamp(jumpForce, Vector3.zero, ref jumpForceV, playerSettings.JumpingFallDown);
-
     }
 
     private void CalcStance()
@@ -254,7 +293,6 @@ public class Movement : MonoBehaviour
 
         characterController.height = Mathf.SmoothDamp(characterController.height, curenntStance.capsuleCollider.height, ref stanceCapsuleHeightVelocity, playerStanceSmooth);
         characterController.center = Vector3.SmoothDamp(characterController.center, curenntStance.capsuleCollider.center, ref stanceCapsulCenterVelocity, playerStanceSmooth);
-
 
     }
 
