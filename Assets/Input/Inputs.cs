@@ -98,6 +98,15 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Climb"",
+                    ""type"": ""Button"",
+                    ""id"": ""9e83c6ab-542e-4113-bf25-e9d3b334a655"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -243,6 +252,17 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
                     ""action"": ""Dash"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""fa85ee55-740a-4586-aad5-b9c9c61622a1"",
+                    ""path"": ""<Keyboard>/q"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Climb"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -259,6 +279,7 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
         m_Char_Sprint = m_Char.FindAction("Sprint", throwIfNotFound: true);
         m_Char_Hook = m_Char.FindAction("Hook", throwIfNotFound: true);
         m_Char_Dash = m_Char.FindAction("Dash", throwIfNotFound: true);
+        m_Char_Climb = m_Char.FindAction("Climb", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -326,6 +347,7 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
     private readonly InputAction m_Char_Sprint;
     private readonly InputAction m_Char_Hook;
     private readonly InputAction m_Char_Dash;
+    private readonly InputAction m_Char_Climb;
     public struct CharActions
     {
         private @Inputs m_Wrapper;
@@ -338,6 +360,7 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
         public InputAction @Sprint => m_Wrapper.m_Char_Sprint;
         public InputAction @Hook => m_Wrapper.m_Char_Hook;
         public InputAction @Dash => m_Wrapper.m_Char_Dash;
+        public InputAction @Climb => m_Wrapper.m_Char_Climb;
         public InputActionMap Get() { return m_Wrapper.m_Char; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -371,6 +394,9 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
                 @Dash.started -= m_Wrapper.m_CharActionsCallbackInterface.OnDash;
                 @Dash.performed -= m_Wrapper.m_CharActionsCallbackInterface.OnDash;
                 @Dash.canceled -= m_Wrapper.m_CharActionsCallbackInterface.OnDash;
+                @Climb.started -= m_Wrapper.m_CharActionsCallbackInterface.OnClimb;
+                @Climb.performed -= m_Wrapper.m_CharActionsCallbackInterface.OnClimb;
+                @Climb.canceled -= m_Wrapper.m_CharActionsCallbackInterface.OnClimb;
             }
             m_Wrapper.m_CharActionsCallbackInterface = instance;
             if (instance != null)
@@ -399,6 +425,9 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
                 @Dash.started += instance.OnDash;
                 @Dash.performed += instance.OnDash;
                 @Dash.canceled += instance.OnDash;
+                @Climb.started += instance.OnClimb;
+                @Climb.performed += instance.OnClimb;
+                @Climb.canceled += instance.OnClimb;
             }
         }
     }
@@ -413,5 +442,6 @@ public partial class @Inputs : IInputActionCollection2, IDisposable
         void OnSprint(InputAction.CallbackContext context);
         void OnHook(InputAction.CallbackContext context);
         void OnDash(InputAction.CallbackContext context);
+        void OnClimb(InputAction.CallbackContext context);
     }
 }

@@ -2,7 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.InputSystem.HID;
 using UnityEngine.UI;
 using static Model;
 
@@ -73,7 +75,7 @@ public class Movement : MonoBehaviour
     private bool isDashing = false;
     private bool isHooking = false;
 
-
+    private RaycastHit hit;
 
     private enum State
     {
@@ -81,6 +83,7 @@ public class Movement : MonoBehaviour
         HookShot,
         HookShotThrown,
         Dash,
+        Climb,
     }
 
 
@@ -99,7 +102,10 @@ public class Movement : MonoBehaviour
         inputs.Char.Prone.performed += e => Prone();
 
         inputs.Char.Sprint.performed += e => ToggelSprint();
+
         inputs.Char.Dash.started += e => Dash();
+
+        inputs.Char.Climb.performed += e => StartClimb();
 
         inputs.Enable();
 
@@ -142,21 +148,14 @@ public class Movement : MonoBehaviour
                 CalcStance();
                 HandelHookshotThorwn();
                 break;
-            case State.Dash:
+            case State.Climb:
+                CalcView();
+                Climb();
                 break;
         }
 
-        if (playerSettings.dashCooldownTimer > 0f)
-        {
-            dashTimeTextField.text = Mathf.Floor(playerSettings.dashCooldownTimer * 10f) / 10f + "s";
-            playerSettings.dashCooldownTimer -= Time.deltaTime;
-        }
-
-        if (playerSettings.hookCooldownTimer > 0f)
-        {
-            hookTimeTextField.text = Mathf.Floor(playerSettings.hookCooldownTimer * 10f) / 10f + "s";
-            playerSettings.hookCooldownTimer -= Time.deltaTime;
-        }
+        playerSettings.dashCooldownTimer = CalcCloodownTimer(playerSettings.dashCooldownTimer);
+        playerSettings.hookCooldownTimer = CalcCloodownTimer(playerSettings.hookCooldownTimer);
     }
 
     private void CalcView()
@@ -237,6 +236,40 @@ public class Movement : MonoBehaviour
 
     }
 
+    private void CalcStance()
+    {
+        var curenntStance = playerStandStance;
+
+        if (playerStance == PlayerStance.Crouch)
+        {
+            curenntStance = playerCrouchStance;
+        }
+        else if (playerStance == PlayerStance.Prone)
+        {
+            curenntStance = playerProneStance;
+        }
+
+        cameraHeight = Mathf.SmoothDamp(cameraHolder.localPosition.y, curenntStance.CameraHeight, ref cameraHeightV, playerStanceSmooth);
+        cameraHolder.localPosition = new Vector3(cameraHolder.localPosition.x, cameraHeight, cameraHolder.localPosition.z);
+
+        characterController.height = Mathf.SmoothDamp(characterController.height, curenntStance.capsuleCollider.height, ref stanceCapsuleHeightVelocity, playerStanceSmooth);
+        characterController.center = Vector3.SmoothDamp(characterController.center, curenntStance.capsuleCollider.center, ref stanceCapsulCenterVelocity, playerStanceSmooth);
+
+
+    }
+
+    private float CalcCloodownTimer(float cooldown)
+    {
+        if (cooldown > 0f)
+        {
+            hookTimeTextField.text = Mathf.Floor(cooldown * 10f) / 10f + "s";
+            cooldown -= Time.deltaTime;
+            return cooldown;
+        }
+        return cooldown;
+
+    }
+
     private void Dash()
     {
 
@@ -289,26 +322,25 @@ public class Movement : MonoBehaviour
         }
     }
 
-    private void CalcStance()
+    private void Climb()
     {
-        var curenntStance = playerStandStance;
 
-        if (playerStance == PlayerStance.Crouch)
+        if (Physics.Raycast(transform.position, transform.forward, out hit, playerSettings.climbRange))
         {
-            curenntStance = playerCrouchStance;
+
+            if (hit.collider.gameObject.tag == "Climbable")
+            {
+                float climbDirection = Input.GetAxis("Vertical");
+                float climbAmount = climbDirection * playerSettings.climbSpeed * Time.deltaTime;
+                transform.Translate(Vector3.up * climbAmount);
+            }
+            else
+            {
+                state = State.Normal;
+                ResetG();
+            }
+
         }
-        else if (playerStance == PlayerStance.Prone)
-        {
-            curenntStance = playerProneStance;
-        }
-
-        cameraHeight = Mathf.SmoothDamp(cameraHolder.localPosition.y, curenntStance.CameraHeight, ref cameraHeightV, playerStanceSmooth);
-        cameraHolder.localPosition = new Vector3(cameraHolder.localPosition.x, cameraHeight, cameraHolder.localPosition.z);
-
-        characterController.height = Mathf.SmoothDamp(characterController.height, curenntStance.capsuleCollider.height, ref stanceCapsuleHeightVelocity, playerStanceSmooth);
-        characterController.center = Vector3.SmoothDamp(characterController.center, curenntStance.capsuleCollider.center, ref stanceCapsulCenterVelocity, playerStanceSmooth);
-
-
     }
 
     private void Crouch()
@@ -402,6 +434,32 @@ public class Movement : MonoBehaviour
         }
     }
 
+    private void StartClimb()
+    {
+        if (Physics.Raycast(transform.position, transform.forward, out hit, playerSettings.climbRange))
+        {
+            if (hit.collider.gameObject.tag != null)
+            {
+                if (hit.collider.gameObject.tag == "Climbable")
+                {
+                    state = State.Climb;
+                }
+                else
+                {
+                    state = State.Normal;
+                    ResetG();
+                }
+                Debug.Log("Tag: " + hit.collider.gameObject.tag);
+            }
+            else
+            {
+                state = State.Normal;
+                ResetG();
+            }
+        }
+    }
+
+
     private void HandelHookshotThorwn()
     {
         hookShotTransform.LookAt(hookShotPos);
@@ -424,7 +482,6 @@ public class Movement : MonoBehaviour
             state = State.Normal;
             hookShotTransform.gameObject.SetActive(false);
         }
-
 
     }
 
@@ -458,6 +515,7 @@ public class Movement : MonoBehaviour
         hookShotTransform.gameObject.SetActive(false);
         camraFOV.SetCameraFov(NORMAL_FOV);
     }
+
     private bool TestInputDownHookShot()
     {
         return Input.GetKeyDown(KeyCode.E);

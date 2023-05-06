@@ -66,12 +66,15 @@ public static class Model
         public float reachedHookshotPositionDistance;
         public float hookShotThorwSpeed;
         public float hookShotMaxDist;
-
-
         public float hookCooldownTimer;
         public float hookTimer;
         public float hookDuration;
         public float hookCooldown;
+
+        [Header("Climb")]
+
+        public float climbSpeed;
+        public float climbRange;
 
         [Header("Speed Effect")]
 
