@@ -43,7 +43,6 @@ public class WeponController : MonoBehaviour
     private void Start()
     {
         newWeaponRot = transform.localRotation.eulerAngles;
-
         currentFireType = allowedFireTypes.First();
     }
 
@@ -99,6 +98,7 @@ public class WeponController : MonoBehaviour
         GameObject bulletInstance = Instantiate(bullet, BulletSpawn);
         Rigidbody bulletRigidbody = bulletInstance.GetComponent<Rigidbody>();
         bulletRigidbody.AddForce(transform.forward * 100f, ForceMode.Impulse);
+        bulletInstance.transform.parent = null;
 
     }
 

@@ -1,27 +1,29 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
+using System;
 using UnityEngine;
 
 public class BulletScript : MonoBehaviour
 {
     [Header("Setting")]
-    public float lifeTime = 1;
+    public float lifeTime = 10;
 
     private void Awake()
     {
         Destroy(gameObject, lifeTime);
     }
 
-    // Start is called before the first frame update
-    void Start()
+    private void OnTriggerEnter(Collider other)
     {
         
-    }
+        if (gameObject.tag != "Arrow")
+        {
+            Debug.Log("Tag: " + other.gameObject.tag);
+            if (other.gameObject.tag == "Enemy") // Check if the hit object is an enemy
+            {
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+                Destroy(other.gameObject); // Destroy the enemy object
+                Destroy(gameObject); // Destroy the bullet object
+
+            }
+        }
     }
 }

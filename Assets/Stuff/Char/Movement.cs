@@ -120,8 +120,6 @@ public class Movement : MonoBehaviour
         inputs.Weapon.FirePressed.performed += e => ShootingPressed();
         inputs.Weapon.FireReleased.performed += e => ShootingReleased();
 
-
-
         inputs.Enable();
 
         camera_Rotation = cameraHolder.localRotation.eulerAngles;

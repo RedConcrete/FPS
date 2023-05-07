@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Climbable
   - NotClimbable
+  - Enemy
+  - Arrow
   layers:
   - Default
   - TransparentFX
