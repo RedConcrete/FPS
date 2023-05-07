@@ -101,8 +101,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lifeTime: 1
-  soundClip: {fileID: 8300000, guid: ad0c9cfbf6fcbfa4788d7b38aceb6466, type: 3}
-  player: {fileID: 919132149155446097, guid: 7f24c408a716b30499eed77de7f0d25c, type: 3}
 --- !u!82 &774298331994908046
 AudioSource:
   m_ObjectHideFlags: 0
