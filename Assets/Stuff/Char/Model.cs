@@ -96,4 +96,38 @@ public static class Model
     }
 
     #endregion
+
+    #region - Weapon -
+
+    public enum WaeponFireType
+    {
+        Semi,
+        Auto,
+    }
+
+    [Serializable]
+    public class WeponSettingsModel
+    {
+        [Header("Sway")]
+        public float swayAmount;
+        public bool swayYInverted;
+        public bool swayXInverted;
+        public float swaySmothing;
+        public float swayResetSmothing;
+        public float swayClampX;
+        public float swayClampY;
+
+        [Header("Weapon Movment Sway")]
+
+        public float movSwayX;
+        public float movSwayY;
+        public bool movSwayYInverted;
+        public bool movSwayXInverted;
+        public float movSwaySmothing;
+
+
+
+    }
+
+    #endregion
 }

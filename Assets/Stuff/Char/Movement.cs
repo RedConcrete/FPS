@@ -16,8 +16,10 @@ public class Movement : MonoBehaviour
     private CharacterController characterController;
 
     private Inputs inputs;
-    private Vector2 input_Movement;
-    private Vector2 input_View;
+    [HideInInspector]
+    public Vector2 input_Movement;
+    [HideInInspector]
+    public Vector2 input_View;
 
     private Vector3 camera_Rotation;
     private Vector3 char_Rotation;
@@ -62,7 +64,8 @@ public class Movement : MonoBehaviour
     private Vector3 stanceCapsulCenterVelocity;
     private float stanceCapsuleHeightVelocity;
 
-    private bool isSprint;
+    [HideInInspector]
+    public bool isSprint;
 
     private Vector3 movementSpeed;
     private Vector3 movementSpeedVelocity;
@@ -79,6 +82,10 @@ public class Movement : MonoBehaviour
     private bool isHooking = false;
 
     private RaycastHit hit;
+
+    [Header("Weapon")]
+    public WeponController weponController;
+    public float weaponAnimSpeed;
 
     private enum State
     {
@@ -110,6 +117,11 @@ public class Movement : MonoBehaviour
 
         inputs.Char.Climb.performed += e => StartClimb();
 
+        inputs.Weapon.FirePressed.performed += e => ShootingPressed();
+        inputs.Weapon.FireReleased.performed += e => ShootingReleased();
+
+
+
         inputs.Enable();
 
         camera_Rotation = cameraHolder.localRotation.eulerAngles;
@@ -126,6 +138,11 @@ public class Movement : MonoBehaviour
         camraFOV = playerCam.GetComponent<CamraFOV>();
 
         jumpCount = 0;
+
+        if (weponController)
+        {
+            weponController.Initialize(this);
+        }
     }
 
     private void Update()
@@ -198,6 +215,19 @@ public class Movement : MonoBehaviour
 
     }
 
+    private void ShootingPressed()
+    {
+        if (weponController)
+        {
+            weponController.isShooting = true;
+        }
+    }
+    private void ShootingReleased()
+    {
+
+    }
+
+
     private void CalcView()
     {
         char_Rotation.y += playerSettings.ViewXSen * (playerSettings.ViewYInverted ? -input_View.x : input_View.x) * Time.deltaTime;
@@ -242,6 +272,13 @@ public class Movement : MonoBehaviour
         else
         {
             playerSettings.speedEffect = 1;
+        }
+
+        weaponAnimSpeed = characterController.velocity.magnitude / (playerSettings.walkingSpeed * playerSettings.speedEffect);
+        
+        if (weaponAnimSpeed > 1)
+        {
+            weaponAnimSpeed = 1;
         }
 
         verticalSpeed *= playerSettings.speedEffect;
@@ -436,7 +473,7 @@ public class Movement : MonoBehaviour
 
     private void ToggelSprint()
     {
-
+        
         if (input_Movement.y <= 0.2f)
         {
             isSprint = false;
