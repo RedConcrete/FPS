@@ -8,6 +8,7 @@ TagManager:
   - NotClimbable
   - Enemy
   - Arrow
+  - Bullet
   layers:
   - Default
   - TransparentFX

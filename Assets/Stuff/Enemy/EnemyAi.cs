@@ -1,16 +1,20 @@
 ﻿
+using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class EnemyAi : MonoBehaviour
 {
     public NavMeshAgent agent;
+    private bool enemyDead;
 
     public Transform player;
 
     public LayerMask whatIsGround, whatIsPlayer;
 
     public float health;
+
+    private BulletScript bullet;
 
     //Patroling
     public Vector3 walkPoint;
@@ -28,6 +32,7 @@ public class EnemyAi : MonoBehaviour
     public float timeBetweenAttacks;
     bool alreadyAttacked;
     public GameObject projectile;
+    public Transform arrowSpawn;
 
     //States
     public float sightRange, attackRange;
@@ -43,28 +48,32 @@ public class EnemyAi : MonoBehaviour
 
     private void Update()
     {
-        //Check for sight and attack range
-        playerInSightRange = Physics.CheckSphere(transform.position, sightRange, whatIsPlayer);
-        playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, whatIsPlayer);
-
-        if (!playerInSightRange && !playerInAttackRange) Patroling();
-        if (playerInSightRange && !playerInAttackRange) ChasePlayer();
-        if (playerInAttackRange && playerInSightRange) AttackPlayer();
-
-        if (Vector3.Distance(transform.position, previousPosition) > movementThreshold)
+        if (!enemyDead)
         {
-            isWalking = true;
-        }
-        else
-        {
-            isWalking = false;
-        }
+            //Check for sight and attack range
+            playerInSightRange = Physics.CheckSphere(transform.position, sightRange, whatIsPlayer);
+            playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, whatIsPlayer);
 
-        // Store the current position for the next frame
-        previousPosition = transform.position;
+            if (!playerInSightRange && !playerInAttackRange) Patroling();
+            if (playerInSightRange && !playerInAttackRange) ChasePlayer();
+            if (playerInAttackRange && playerInSightRange) AttackPlayer();
 
-        // Trigger the animation if the Rigidbody is moving
-        animator.SetBool("isWalking", isWalking);
+            if (Vector3.Distance(transform.position, previousPosition) > movementThreshold)
+            {
+                isWalking = true;
+            }
+            else
+            {
+                isWalking = false;
+            }
+
+            // Store the current position for the next frame
+            previousPosition = transform.position;
+
+            // Trigger the animation if the Rigidbody is moving
+            animator.SetBool("isWalking", isWalking);
+        }
+        
     }
 
     private void Patroling()
@@ -107,13 +116,18 @@ public class EnemyAi : MonoBehaviour
         if (!alreadyAttacked)
         {
             ///Attack code here
-            Rigidbody rb = Instantiate(projectile, transform.position, Quaternion.identity).GetComponent<Rigidbody>();
+            Rigidbody rb = Instantiate(projectile, arrowSpawn.transform.position, Quaternion.identity).GetComponent<Rigidbody>();
+            animator.SetBool("isAttacking", true);
             rb.transform.LookAt(player);
             rb.AddForce(transform.forward * 32f, ForceMode.Impulse);
             ///End of attack code
 
             alreadyAttacked = true;
             Invoke(nameof(ResetAttack), timeBetweenAttacks);
+        }
+        else
+        {
+            animator.SetBool("isAttacking", false);
         }
     }
     private void ResetAttack()
@@ -124,12 +138,16 @@ public class EnemyAi : MonoBehaviour
     public void TakeDamage(int damage)
     {
         health -= damage;
-
+        animator.SetBool("isHit", false);
         if (health <= 0) Invoke(nameof(DestroyEnemy), 0.5f);
     }
     private void DestroyEnemy()
     {
-        Destroy(gameObject);
+
+        animator.SetBool("isDying", true);
+        enemyDead = true;
+
+        //Destroy(gameObject);
     }
 
     private void OnDrawGizmosSelected()
@@ -138,5 +156,28 @@ public class EnemyAi : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, attackRange);
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, sightRange);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.tag == "Bullet") // Check if the hit object is an enemy
+        {
+            bullet = other.gameObject.GetComponent<BulletScript>();
+            animator.SetBool("isHit", true);
+            /*
+            if (enemyHP.getSetEnenmyHitPoints > 0)
+            {
+                enemyHP.getSetEnenmyHitPoints -= bullet.DMG;
+            }
+            else
+            {
+                Destroy(gameObject); // Destroy the bullet object
+            }
+            */
+            Debug.Log(health);
+            TakeDamage(bullet.DMG);
+
+            Destroy(other.gameObject); // Destroy the enemy object
+        }
     }
 }

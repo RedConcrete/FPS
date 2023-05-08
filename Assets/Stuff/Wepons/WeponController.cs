@@ -24,6 +24,7 @@ public class WeponController : MonoBehaviour
     public WaeponFireType currentFireType;
     [HideInInspector]
     public bool isShooting;
+    public float shootForce;
 
     bool isInitialize;
 
@@ -97,7 +98,7 @@ public class WeponController : MonoBehaviour
     {
         GameObject bulletInstance = Instantiate(bullet, BulletSpawn);
         Rigidbody bulletRigidbody = bulletInstance.GetComponent<Rigidbody>();
-        bulletRigidbody.AddForce(transform.forward * 100f, ForceMode.Impulse);
+        bulletRigidbody.AddForce(transform.forward * shootForce, ForceMode.Impulse);
         bulletInstance.transform.parent = null;
 
     }

@@ -13,7 +13,7 @@ public class HP : MonoBehaviour
         CheckIfPlayerDead();
     }
 
-    private void CheckIfPlayerDead()
+    public void CheckIfPlayerDead()
     {
         if (hPPlayer <= 0)
         {
@@ -33,4 +33,9 @@ public class HP : MonoBehaviour
         set { hPPlayer = value; }
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+
+        //Debug.Log("Tesst");
+    }
 }
