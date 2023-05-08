@@ -25,6 +25,7 @@ public class WeponController : MonoBehaviour
     [HideInInspector]
     public bool isShooting;
     public float shootForce;
+    public GameObject shootRot;
 
     bool isInitialize;
 
@@ -96,8 +97,9 @@ public class WeponController : MonoBehaviour
 
     private void Shoot()
     {
-        GameObject bulletInstance = Instantiate(bullet, BulletSpawn);
+        GameObject bulletInstance = Instantiate(bullet, BulletSpawn.gameObject.transform);
         Rigidbody bulletRigidbody = bulletInstance.GetComponent<Rigidbody>();
+        bulletRigidbody.transform.LookAt(shootRot.transform);
         bulletRigidbody.AddForce(transform.forward * shootForce, ForceMode.Impulse);
         bulletInstance.transform.parent = null;
 

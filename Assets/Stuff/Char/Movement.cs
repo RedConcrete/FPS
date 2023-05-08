@@ -34,7 +34,6 @@ public class Movement : MonoBehaviour
     public GameObject rig;
     private Animator animator;
 
-
     [Header("Settings")]
     public PlayerSettingsModel playerSettings;
     public float viewClampYMin = -70;
@@ -86,6 +85,14 @@ public class Movement : MonoBehaviour
     [Header("Weapon")]
     public WeponController weponController;
     public float weaponAnimSpeed;
+
+    public int hpPlayer;
+    private bool playerDead;
+    private ArrowScript arrow;
+
+    public GameObject overPlayerCam;
+    public GameObject wasted;
+
 
     private enum State
     {
@@ -141,74 +148,83 @@ public class Movement : MonoBehaviour
         {
             weponController.Initialize(this);
         }
+
     }
 
     private void Update()
     {
-
-        switch (state)
+        if (!playerDead)
         {
-            default:
-            case State.Normal:
-                CalcView();
-                CalcMovement();
-                CalcJump();
-                CalcStance();
-                StartGrapple();
-                break;
-            case State.HookShot:
-                CalcView();
-                HandelHookshotMovement();
-                break;
-            case State.HookShotThrown:
-                CalcView();
-                CalcMovement();
-                CalcJump();
-                CalcStance();
-                HandelHookshotThorwn();
-                break;
-            case State.Climb:
-                CalcView();
-                Climb();
-                break;
-        }
-
-        if (playerSettings.hookCooldownTimer > 0f)
-        {
-            hookTimeTextField.text = Mathf.Floor(playerSettings.hookCooldownTimer * 10f) / 10f + "s";
-            playerSettings.hookCooldownTimer -= Time.deltaTime;
-        }
-
-        if (playerSettings.dashCooldownTimer > 0f)
-        {
-            dashTimeTextField.text = Mathf.Floor(playerSettings.dashCooldownTimer * 10f) / 10f + "s";
-            playerSettings.dashCooldownTimer -= Time.deltaTime;
-        }
-
-        if (input_Movement.y > 0.2f && characterController.isGrounded)
-        {
-            if (isSprint)
+            switch (state)
             {
-                animator.SetBool("isRunning", true);
+                default:
+                case State.Normal:
+                    CalcView();
+                    CalcMovement();
+                    CalcJump();
+                    CalcStance();
+                    StartGrapple();
+                    break;
+                case State.HookShot:
+                    CalcView();
+                    HandelHookshotMovement();
+                    break;
+                case State.HookShotThrown:
+                    CalcView();
+                    CalcMovement();
+                    CalcJump();
+                    CalcStance();
+                    HandelHookshotThorwn();
+                    break;
+                case State.Climb:
+                    CalcView();
+                    Climb();
+                    break;
+            }
+
+            if (playerSettings.hookCooldownTimer > 0f)
+            {
+                hookTimeTextField.text = Mathf.Floor(playerSettings.hookCooldownTimer * 10f) / 10f + "s";
+                playerSettings.hookCooldownTimer -= Time.deltaTime;
+            }
+
+            if (playerSettings.dashCooldownTimer > 0f)
+            {
+                dashTimeTextField.text = Mathf.Floor(playerSettings.dashCooldownTimer * 10f) / 10f + "s";
+                playerSettings.dashCooldownTimer -= Time.deltaTime;
+            }
+
+            if (input_Movement.y > 0.2f && characterController.isGrounded)
+            {
+                if (isSprint)
+                {
+                    animator.SetBool("isRunning", true);
+                }
+                else
+                {
+                    animator.SetBool("isWalking", true);
+                }
             }
             else
             {
-                animator.SetBool("isWalking", true);
+                animator.SetBool("isWalking", false);
+                animator.SetBool("isRunning", false);
+            }
+
+            if (!characterController.isGrounded)
+            {
+                animator.SetBool("isJumping", true);
+            }
+            else
+            {
+                animator.SetBool("isJumping", false);
             }
         }
         else
         {
-            animator.SetBool("isWalking", false);
-            animator.SetBool("isRunning", false);
-        }
-
-        if (!characterController.isGrounded)
-        {
-            animator.SetBool("isJumping", true);
-        }
-        else
-        {
-            animator.SetBool("isJumping", false);
+            overPlayerCam.gameObject.SetActive(true);
+            wasted.gameObject.SetActive(true);
+            playerCam.gameObject.SetActive(false);
         }
 
     }
@@ -596,5 +612,45 @@ public class Movement : MonoBehaviour
     private void ResetG()
     {
         playerG = 0;
+    }
+
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.tag == "Arrow") // Check if the hit object is an enemy
+        {
+            
+            arrow = other.gameObject.GetComponent<ArrowScript>();
+            TakeDamage(arrow.DMG);
+            Debug.Log(hpPlayer);
+            Destroy(other.gameObject); // Destroy the enemy object
+        }
+
+    }
+
+    public void TakeDamage(int damage)
+    {
+        //if (health <= 0) Invoke(nameof(), 0.5f);
+        if (hpPlayer > 10)
+        {
+            //animator.SetBool("isHit", false);
+            hpPlayer -= damage;
+        }
+        else
+        {
+            DestroyEnemy();
+        }
+
+
+    }
+    private void DestroyEnemy()
+    {
+        animator.SetBool("isDying", true);
+        animator.SetBool("isJumping", false);
+        animator.SetBool("isWalking", false);
+        animator.SetBool("isRunning", false);
+        playerDead = true;
+
+        //Destroy(gameObject);
     }
 }

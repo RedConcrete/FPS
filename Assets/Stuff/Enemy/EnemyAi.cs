@@ -1,4 +1,5 @@
 ﻿
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
@@ -22,11 +23,10 @@ public class EnemyAi : MonoBehaviour
     public float walkPointRange;
 
     //Animation
-    public float movementThreshold = 0.2f;
+    public float movementThreshold;
     public Animator animator;
     bool isWalking;
     private Vector3 previousPosition;
-
 
     //Attacking
     public float timeBetweenAttacks;
@@ -118,6 +118,7 @@ public class EnemyAi : MonoBehaviour
             ///Attack code here
             Rigidbody rb = Instantiate(projectile, arrowSpawn.transform.position, Quaternion.identity).GetComponent<Rigidbody>();
             animator.SetBool("isAttacking", true);
+            
             rb.transform.LookAt(player);
             rb.AddForce(transform.forward * 32f, ForceMode.Impulse);
             ///End of attack code
@@ -130,6 +131,15 @@ public class EnemyAi : MonoBehaviour
             animator.SetBool("isAttacking", false);
         }
     }
+
+    IEnumerator Example()
+    {
+        Debug.Log("Hello");
+        //wait 3 seconds
+        yield return new WaitForSeconds(15);
+        Debug.Log("Goodbye");
+    }
+
     private void ResetAttack()
     {
         alreadyAttacked = false;
@@ -137,14 +147,26 @@ public class EnemyAi : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        health -= damage;
-        animator.SetBool("isHit", false);
-        if (health <= 0) Invoke(nameof(DestroyEnemy), 0.5f);
+        //if (health <= 0) Invoke(nameof(), 0.5f);
+        if (health > 0)
+        {
+            //animator.SetBool("isHit", false);
+            health -= damage;
+        }
+        else
+        {
+            DestroyEnemy();
+        }
+        
+        
     }
     private void DestroyEnemy()
     {
 
         animator.SetBool("isDying", true);
+        animator.SetBool("isHit", false);
+        animator.SetBool("isWalking", false);
+        animator.SetBool("isAttacking", false);
         enemyDead = true;
 
         //Destroy(gameObject);
@@ -163,7 +185,7 @@ public class EnemyAi : MonoBehaviour
         if (other.gameObject.tag == "Bullet") // Check if the hit object is an enemy
         {
             bullet = other.gameObject.GetComponent<BulletScript>();
-            animator.SetBool("isHit", true);
+            //animator.SetBool("isHit", true);
             /*
             if (enemyHP.getSetEnenmyHitPoints > 0)
             {

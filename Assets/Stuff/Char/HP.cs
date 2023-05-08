@@ -7,6 +7,7 @@ public class HP : MonoBehaviour
 {
     public int hPPlayer;
     public TextMeshProUGUI PlayerHPTextField;
+    private ArrowScript arrow;
 
     private void Update()
     {
@@ -31,11 +32,5 @@ public class HP : MonoBehaviour
     {
         get { return hPPlayer; }
         set { hPPlayer = value; }
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-
-        //Debug.Log("Tesst");
     }
 }
